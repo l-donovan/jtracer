@@ -12,19 +12,13 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 import static jtracer.tracelib.basetypes.Intersection.NO_INTERSECTION;
+import static jtracer.tracelib.helper.MathUtils.clamp;
+import static jtracer.tracelib.helper.MathUtils.sgn;
 
 public class Core {
     public static double minPositive(double ...args) {
         OptionalDouble d = Arrays.stream(args).filter(arg -> arg >= 0).min();
         return d.isPresent() ? d.getAsDouble() : 0;
-    }
-
-    public static double clamp(double num, double lower, double upper) {
-        return Math.max(Math.min(num, upper), lower);
-    }
-
-    public static double sgn(double num) {
-        return Math.copySign(1, num);
     }
 
     public static Vec rot(Vec v, double cos_rx, double cos_ry, double cos_rz, double sin_rx, double sin_ry, double sin_rz) {
@@ -126,9 +120,9 @@ public class Core {
 
             if (material.reflective) {
                 double kr = fresnel(d, n, material.ior);
+                Vec reflectionDir = reflect(d, n).norm();
 
                 if (material.refractive) {
-                    Vec reflectionDir = reflect(d, n).norm();
                     Vec reflectionOrigin = hitPos.add(n.mul(options.bias).mul(sgn(reflectionDir.dot(n))));
                     Vec reflectionColor = castRay(reflectionOrigin, reflectionDir, scene, options, depth + 1);
                     Vec refractionDir = refract(d, n, material.ior).norm();
@@ -136,7 +130,6 @@ public class Core {
                     Vec refractionColor = castRay(refractionOrigin, refractionDir, scene, options, depth + 1);
                     hitColor = reflectionColor.mul(kr).add(refractionColor.mul(1.0 - kr));
                 } else {
-                    Vec reflectionDir = reflect(d, n).norm();
                     Vec reflectionOrigin = hitPos.sub(n.mul(options.bias).mul(sgn(reflectionDir.dot(n))));
                     Vec reflectionColor = castRay(reflectionOrigin, reflectionDir, scene, options, depth + 1);
                     hitColor = reflectionColor.mul(kr);
@@ -150,14 +143,14 @@ public class Core {
                     Vec vec = light.pos.sub(shadowOrigin);
                     double ld2 = vec.mag2();
                     vec = vec.norm();
-                    double ldn = Math.max(vec.dot(n), 0.0);
+                    double ldn = Math.max(vec.dot(n), 0);
                     Intersection j = checkIntersection(shadowOrigin, vec, scene.objects);
-                    if (!j.didIntersect() || Math.pow(j.getDistance(), 2.0) >= ld2) {
+                    if (!j.didIntersect() || Math.pow(j.getDistance(), 2) >= ld2) {
                         lightAmt += light.intensity * ldn;
                     }
                     Vec reflectionDir = reflect(vec.neg(), n);
                     specularColor = specularColor.add(
-                        Math.pow(Math.max(-reflectionDir.dot(n), 0.0), material.specularExp) * light.intensity
+                        Math.pow(Math.max(-reflectionDir.dot(n), 0), material.specularExp) * light.intensity
                     );
                 }
 
@@ -248,7 +241,7 @@ public class Core {
             .withReflection(false)
             .withRefraction(false)
             .withSpecularExp(25)
-            .withDiffuseColor(new Vec(0.8, 0.8, 0.8))
+            .withDiffuseColor(new Vec(0.2, 0.2, 0.2))
             .withDiffuseCoeff(0.8)
             .withSpecularCoeff(0.2)
             .withIndexOfRefraction(1.3)),

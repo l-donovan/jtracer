@@ -26,7 +26,7 @@ public class Sphere implements SceneObject {
             return Intersection.NO_INTERSECTION;
         }
 
-        double discr = Math.pow(b, 2.0) - c;
+        double discr = Math.pow(b, 2) - c;
 
         if (discr < 0) {
             return Intersection.NO_INTERSECTION;

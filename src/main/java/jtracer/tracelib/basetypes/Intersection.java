@@ -32,4 +32,16 @@ public class Intersection {
     public SceneObject intersectionObject() {
         return this.object;
     }
+
+    public static Vec getPlanarNormal(Vec p, Vec v0, Vec v1, Vec v2) {
+        Vec n = v1.sub(v0).cross(v2.sub(v0));
+        double s = n.dot(v0);
+        double r = n.dot(p) + s;
+
+        if (r >= 0) {
+            n = n.neg();
+        }
+
+        return n.norm();
+    }
 }
